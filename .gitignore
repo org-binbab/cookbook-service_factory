@@ -1,0 +1,20 @@
+# Berkshelf
+.vagrant
+Berksfile.lock
+*~
+*#
+.#*
+\#*#
+.*.sw[a-z]
+*.un~
+/cookbooks
+
+# Bundler
+Gemfile.lock
+bin/*
+.bundle/*
+.rakeTasks
+
+# Test-Kitchen
+.kitchen/
+.kitchen.local.yml

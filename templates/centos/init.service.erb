@@ -1,0 +1,178 @@
+#!/bin/bash
+#
+# <%= @service_name %>
+#
+# chkconfig: - 98 02
+# description: <%= @service_desc %>
+
+### BEGIN INIT INFO
+# Provides: <%= @service_name %>
+# Required-Start: $local_fs $network $remote_fs
+# Required-Stop: $local_fs $network $remote_fs
+# Should-Start: $named $time
+# Should-Stop: $named $time
+# Short-Description: Startup script for <%= @service_name %>
+# Description: <%= @service_desc %>
+### END INIT INFO
+
+# Source function library
+. /etc/init.d/functions
+
+EXECUTE="<%= @exec %>"
+PROCESS="<%= @process_name || ::File::basename(@exec) %>"
+PROGRAM="<%= @service_name %>"
+TIMEOUT="<%= @kill_timeout %>"
+
+[ -e /etc/sysconfig/$PROGRAM ] && . /etc/sysconfig/$PROGRAM
+
+PID_FILE=${PIDFILE-<%= @pid_file %>}
+LCK_FILE=${LOCKFILE-<%= @lock_file %>}
+LOG_FILE=${LOGFILE-<%= @log_file %>}
+RUN_USER=${RUNUSER-<%= @run_user %>}
+
+RETVAL=0
+
+start() {
+    [ -x $EXECUTE ] || exit 5
+
+    umask <%= @exec_umask %>
+    echo -n "Starting $PROGRAM: "
+<% if @before_start != "" -%>
+
+    ##### BEFORE STARTUP ######################################################
+    <%= @before_start %>
+    ###########################################################################
+
+<% end -%>
+<% if @exec_forks -%>
+    # We expect executable to fork.
+    daemon --user "$RUN_USER" --pidfile "$PID_FILE" "$EXECUTE <%= Array(@exec_args).join(' ') %> &> /dev/null"
+<% else -%>
+    # We do NOT expect executable to fork. Disown.
+    <%
+       log_stanza = case @log_what
+         when :std_all
+           "1>> '$LOG_FILE' 2>&1"
+         when :std_out
+           "1>> '$LOG_FILE' 2> /dev/null"
+         when :std_err
+           "1> /dev/null 2>> '$LOG_FILE'"
+         else
+           "&> /dev/null"
+       end
+
+       pid_stanza = case @create_pid
+         when true
+           "&& echo \\$child_pid > '$PID_FILE'"
+         else
+           ""
+       end
+    -%>
+    daemon --user "$RUN_USER"     \
+           --pidfile="$PID_FILE"  \
+           "$EXECUTE <%= Array(@exec_args).join(' ') %> <%= log_stanza %> & child_pid=\$! && disown \$child_pid <%= pid_stanza %>"
+<% end -%>
+    RETVAL=$?
+    echo
+    if [ $RETVAL -eq 0 ] ; then
+        touch $LCK_FILE
+    else
+        return $RETVAL
+    fi
+<% if @after_start != "" -%>
+
+    ##### AFTER STARTUP #######################################################
+    <%= @after_start %>
+    ###########################################################################
+
+<% end -%>
+    return $RETVAL
+}
+
+stop() {
+    echo -n "Stopping $PROGRAM: "
+<% if @before_stop != "" -%>
+
+    ##### BEFORE STOP #########################################################
+    <%= @before_stop %>
+    ###########################################################################
+
+<% end -%>
+    killproc -p $PID_FILE -d $TIMEOUT $PROCESS
+    RETVAL=$?
+    echo
+    if [ $RETVAL -eq 0 ] ; then
+        rm -f $LCK_FILE
+    else
+        return $RETVAL
+    fi
+<% if @after_stop != "" -%>
+
+    ##### AFTER STOP ##########################################################
+    <%= @after_stop %>
+    ###########################################################################
+
+<% end -%>
+    return $RETVAL
+}
+
+restart() {
+    stop
+    start
+}
+
+reload() {
+<% if @supports_reload -%>
+    echo -n "Reloading $PROGRAM: "
+    killproc -p $PID_FILE $PROCESS -SIGHUP
+    echo
+<% else -%>
+    restart
+<% end -%>
+}
+
+force_reload() {
+    restart
+}
+
+rh_status() {
+    status -p $PID_FILE $PROCESS
+}
+
+rh_status_quiet() {
+    rh_status >/dev/null 2>&1
+}
+
+case "$1" in
+    start)
+        rh_status_quiet && exit 0
+        $1
+        ;;
+    stop)
+        rh_status_quiet
+        [ $? -lt 2 ] || exit 0
+        $1
+        ;;
+    restart)
+        $1
+        ;;
+    reload)
+        rh_status_quiet || exit 7
+        $1
+        ;;
+    force-reload)
+        force_reload
+        ;;
+    status)
+        rh_status
+        ;;
+    condrestart|try-restart)
+        rh_status_quiet || exit 0
+        restart
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload}"
+        exit 2
+esac
+
+exit $RETVAL

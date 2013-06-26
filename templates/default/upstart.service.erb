@@ -1,0 +1,168 @@
+description "<%= @service_desc %>"
+
+env EXECUTE=<%= @exec %>
+env PROCESS=<%= @process_name || ::File::basename(@exec) %>
+
+env PID_FILE=<%= @pid_file %>
+env LCK_FILE=<%= @lock_file %>
+env LOG_FILE=<%= @log_file %>
+env RUN_USER=<%= @run_user %>
+
+start on runlevel [35]
+stop on starting rc RUNLEVEL=[016]  # ensures long kill timeout's are enforced
+kill timeout <%= @kill_timeout %>
+<% unless @supports_reload -%>
+respawn
+respawn limit 1 30
+<% end -%>
+
+console none
+umask <%= @exec_umask %>
+
+<% unless @exec_forks -%>
+<%
+   # Because of "console none", we don't have to redirect to /dev/null.
+   log_stanza = case @log_what
+                  when :std_all
+                    "1>> $LOG_FILE 2>&1"
+                  when :std_out
+                    "1>> $LOG_FILE"
+                  when :std_err
+                    "2>> $LOG_FILE"
+                  else
+                    ""
+                end
+
+   pid_stanza_a = case @create_pid
+                    when true
+                      "-m"
+                    else
+                      ""
+                  end
+
+   pid_stanza_b = case @create_pid
+                    when true
+                      "& echo \\$! > $PID_FILE && wait"
+                    else
+                      ""
+                  end
+-%>
+<% if @before_start != "" -%>
+pre-start script
+  ##### BEFORE STARTUP ######################################################
+  <%= @before_start %>
+  ###########################################################################
+end script
+
+<% end -%>
+script
+  if [ -x "/sbin/start-stop-daemon" ] ; then
+    exec start-stop-daemon -c $RUN_USER -p $PID_FILE <%= pid_stanza_a %> -x $EXECUTE --start -- <%= Array(@exec_args).join(' ') %> <%= log_stanza %>
+  else
+    # WARNING: Reload/SIGHUP signals will not permiate this command.
+    exec su -l -s /bin/bash -c "exec \$0 \$@ <%= pid_stanza_b %>" $RUN_USER -- $EXECUTE <%= Array(@exec_args).join(' ') %> <%= log_stanza %>
+  fi
+end script
+
+<% if @after_start != "" -%>
+post-start script
+  ##### AFTER STARTUP #######################################################
+  <%= @after_start %>
+  ###########################################################################
+end script
+
+<% end -%>
+<% if @before_stop != "" -%>
+pre-stop script
+  ##### BEFORE STOP #########################################################
+  <%= @before_stop %>
+  ###########################################################################
+end script
+
+<% end -%>
+<% if @after_stop != "" -%>
+post-stop script
+  ##### AFTER STOP ##########################################################
+  <%= @after_stop %>
+  ###########################################################################
+end script
+
+<% end -%>
+
+<% else #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~# -%>
+# NOTE:
+#   The target is expected to fork/daemonize. Upstart's handling of this is unreliable
+#   since detailed knowlege of how many times the daemon forks is required, and an
+#   impropper setting can result in a "stuck" state which requires a system reboot.
+#   For more information: https://bugs.launchpad.net/upstart/+bug/406397
+#
+#   In order to provide consistent and relaible behavior, the following pre/post
+#   scripts handle appropriate tracking of the daemon process.
+
+pre-start script
+  <% if @before_start != "" -%>
+  ##### BEFORE STARTUP ######################################################
+  <%= @before_start %>
+  ###########################################################################
+
+  <% end -%>
+  su -l -s /bin/bash -c 'exec "$0" "$@"' $RUN_USER -- $EXECUTE <%= Array(@exec_args).join(' ') %> &> /dev/null
+end script
+
+<% if @after_start != "" -%>
+post-start script
+  ##### AFTER STARTUP #######################################################
+  <%= @after_start %>
+  ###########################################################################
+end script
+
+<% end -%>
+script
+  sleep 4
+
+  pid=""
+  [ -e "$PID_FILE" ] && pid="$(cat $PID_FILE)"
+
+  status=0
+
+  if [ -n "$pid" -a "$pid" -gt 0 ] ; then
+    trap 'kill -s 1 $pid' 1  # forwards reload signal
+    while [ $status -eq 0 ] ; do
+      sleep 1
+      ps h o command $pid | grep $PROCESS > /dev/null
+      status=$?
+    done
+  else
+    while [ $status -eq 0 ] ; do
+      sleep 1
+      ps h o command -u $RUN_USER | grep $PROCESS > /dev/null
+      status=$?
+    done
+  fi
+end script
+
+<% if @before_stop != "" -%>
+pre-stop script
+  ##### BEFORE STOP #########################################################
+  <%= @before_stop %>
+  ###########################################################################
+end script
+
+<% end -%>
+post-stop script
+  pid=""
+  [ -e "$PID_FILE" ] && pid="$(cat $PID_FILE)"
+
+  if [ -n "$pid" -a "$pid" -gt 0 ] ; then
+    kill $pid &> /dev/null
+  else
+    killall -u $RUN_USER $PROCESS
+  fi
+  <% if @after_stop != "" -%>
+  ##### AFTER STOP ##########################################################
+  <%= @after_stop %>
+  ###########################################################################
+  <% end -%>
+end script
+
+<% end -%>
