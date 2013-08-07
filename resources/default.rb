@@ -31,7 +31,7 @@ default_action :create
 attribute :service_name, :kind_of => String, :regex => /^[a-z0-9_]+$/i, :name_attribute => true
 attribute :service_desc, :kind_of => String, :required => true
 
-attribute :exec, :kind_of => String, :regex => /^\//, :required => true
+attribute :exec, :kind_of => String, :regex => /^[\/%]/, :required => true
 attribute :exec_args, :kind_of => [ String, Array ], :default => ""
 attribute :exec_umask, :kind_of => String, :default => "0027"
 attribute :exec_forks, :kind_of => [ TrueClass, FalseClass ], :default => false
@@ -45,10 +45,6 @@ attribute :after_start, :kind_of => String, :default => ""
 attribute :before_stop, :kind_of => String, :default => ""
 attribute :after_stop, :kind_of => String, :default => ""
 
-#TODO
-#attribute :app_basepath, :kind_of => String, :default => ""
-#attribute :app_datapath, :kind_of => String, :default => ""
-
 attribute :base_path, :kind_of => String, :default => ""
 attribute :var_subpath, :kind_of => String, :default => nil
 
@@ -60,3 +56,5 @@ attribute :create_pid, :kind_of => [ TrueClass, FalseClass ], :default => nil
 
 attribute :run_user, :kind_of => String, :required => true
 attribute :run_group, :kind_of => String, :required => true
+
+attribute :path_variables, :kind_of => Hash, :default => Hash.new

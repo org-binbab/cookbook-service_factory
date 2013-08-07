@@ -25,6 +25,10 @@
 # limitations under the License.
 #
 
+require 'chef/exceptions'
+require 'chef/provider'
+require 'chef/resource'
+
 class Chef
   class Provider
     class ServiceFactory
@@ -118,18 +122,19 @@ class Chef
 
             # Ensure pid directory is writable (in case we didn't create it).
             # But only if we're certain it's dedicated to this service.
-            if !service_config.exec_forks && service_config.create_pid && service_config.pid_file.match("/var/run/#{service_config.var_subpath}")
-              create_dir(path)
+            if !service_config.exec_forks && service_config.create_pid && service_config.pid_file.match("^/var/run/#{service_config.var_subpath}/")
+              create_dir(::File::dirname(service_config.pid_file))
             end
 
             # Create (and ensure writable) the log file.
-            if !service_config.exec_forks && service_config.log_file.match("/var/log/#{service_config.var_subpath}")
-              file service_config.log_file do
+            if !service_config.exec_forks && service_config.log_file.match("^/var/log/#{service_config.var_subpath}/")
+              log_file = file service_config.log_file do
                 owner service_config.run_user
                 group service_config.run_group
                 mode 0775
-                action :create_if_missing
+                action :nothing
               end
+              log_file.run_action(:create)
             end
           end  # /unix_path_prep
 

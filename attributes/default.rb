@@ -26,6 +26,6 @@
 #
 
 # Define default platform_map.
-default["service_factory"]["platform_map"]["centos"]["default"] = "init"
+default["service_factory"]["platform_map"]["default"] = "init"
 default["service_factory"]["platform_map"]["ubuntu"]["default"] = "upstart"
 #default["service_factory"]["provider"] = nil

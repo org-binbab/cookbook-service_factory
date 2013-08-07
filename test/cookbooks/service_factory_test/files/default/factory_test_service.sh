@@ -1,7 +1,47 @@
 #!/bin/bash
+#
+#  service_daemon.sh
+#  ----------------------------------------------------------------------
+#  Copyright 2013 sha1(OWNER) = df334a7237f10846a0ca302bd323e35ee1463931
+
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+#   implied. See the License for the specific language governing
+#   permissions and limitations under the License.
+#  ----------------------------------------------------------------------
+
+VERSION="0.1.1"
+RELEASE="2013-08-06"
+
+#  The latest version of this script, along with any documentation,
+#  source code, and bug/feature management is available at:
+#
+#    http://code.binbab.org
+#
+#  ----------------------------------------------------------------------
+#  This script acts as a unix service simulate. It has the ability to
+#  track start/stop/reload actions in order to evalute the operation
+#  of a wrapper or service management platform.
+#
+#  USAGE:
+#    See "./service_daemon.sh --help" for more information.
+#  ----------------------------------------------------------------------
+
+#########################################################################
+###### CONFIGURATION ####################################################
 
 TEST_STRING="Soundslikefunonabun"
 PORT=1234
+
+###### END CONFIG #######################################################
+#########################################################################
 
 START_USER=$(whoami)
 START_TIME=$(date +%s)
@@ -11,6 +51,28 @@ PARENT_PID="-1"
 SUB_PID="-1"
 FORK=0
 RELOAD=1
+
+function usage {
+  echo
+  echo ">>> UNIX SERVICE MOCK DAEMON, ver ${VERSION}"
+  echo
+  echo "Usage: $(basename $0) OPTIONS"
+  echo
+  echo "Default port: ${PORT}"
+  echo
+  echo "Response format:"
+  echo "  TEST_STRING START_TIME PARENT_PID START_PID START_USER RELOAD_COUNTER"
+  echo
+  echo "Example response:"
+  echo "  $TEST_STRING $START_TIME $PARENT_PID $START_PID $START_USER $RELOAD_COUNTER"
+  echo
+  echo "Available options:"
+  echo "  --fork              Fork and return immediately"
+  echo "  --no-reload         Exit on reload (SIGHUP)"
+  echo "  --port PORT         Listen on alternate port"
+  echo
+  exit 1
+}
 
 function kill_sub {
   [ $SUB_PID -gt 0 ] && kill $SUB_PID &> /dev/null
@@ -48,6 +110,9 @@ while [ $# -gt 0 ] ; do
     --ppid)
       shift
       [ "$1" -gt 0 ] && PARENT_PID=$1
+      ;;
+    *)
+      usage
       ;;
   esac
   shift

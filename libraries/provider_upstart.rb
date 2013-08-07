@@ -37,31 +37,38 @@ class Chef
     class ServiceFactoryProvider
       class Upstart < Generic
 
+        include RunActionNow::Mixin
         include Chef::Provider::ServiceFactory::Mixin::Unix
 
         def install_service
-          unix_path_prep  # from mixin
+          unix_path_prep  # from unix mixin
 
           # Requirements.
-          unix_bin "initctl"
+          run_action_now((
+            unix_bin "initctl"
+          ))
 
           # Create upstart job.
-          template "/etc/init/#{service_config.service_name}.conf" do
-            action :create
-            cookbook "service_factory"
-            source "upstart.service.erb"
-            owner "root"
-            group "root"
-            mode 0644
-            variables(service_config.symbolize_keys)  # full service_config provided
-          end
+          run_action_now((
+            template "/etc/init/#{service_config.service_name}.conf" do
+              action :create
+              cookbook "service_factory"
+              source "upstart.service.erb"
+              owner "root"
+              group "root"
+              mode 0644
+              variables(service_config.symbolize_keys)  # full service_config provided
+            end
+          ))
         end  # /install_service
 
         def uninstall_service
           # Remove upstart job.
-          file "/etc/init/#{service_config.service_name}.conf" do
-            action :delete
-          end
+          run_action_now((
+            file "/etc/init/#{service_config.service_name}.conf" do
+              action :delete
+            end
+          ))
         end  # /uninstall_service
 
       end

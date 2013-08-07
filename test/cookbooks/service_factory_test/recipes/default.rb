@@ -41,7 +41,7 @@ end
 #   Ensure no parent PID.
 #   Ensure PID file created.
 #   Ensure hook execution.
-#   Reload by propper handling of SIGHUP.
+#   Reload by proper handling of SIGHUP.
 service_factory "fts_nofork" do
   action [ :create, :disable ]
   service_desc "Test Service"
@@ -61,7 +61,7 @@ end
 #   Ensure PID forked.
 #   Passing of command line args.
 #   Ensure hook execution.
-#   Reload by propper handling of SIGHUP.
+#   Reload by proper handling of SIGHUP.
 service_factory "fts_fork" do
   action [ :create, :disable ]
   service_desc "Test Service (fork)"
@@ -112,7 +112,7 @@ service_factory "fts_nobody" do
   exec fts_script
   pid_file "#{fts_script}.pid.nobody"
   run_user "nobody"
-  run_group "root"  # nobody group is not consistent accross systems
+  run_group "root"  # nobody group is not consistent across systems
 end
 
 # Related tests:

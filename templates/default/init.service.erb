@@ -137,10 +137,12 @@ force_reload() {
 
 rh_status() {
     status -p $PID_FILE $PROCESS
+    return $?
 }
 
 rh_status_quiet() {
     rh_status >/dev/null 2>&1
+    return $?
 }
 
 case "$1" in
@@ -165,6 +167,7 @@ case "$1" in
         ;;
     status)
         rh_status
+        exit $?
         ;;
     condrestart|try-restart)
         rh_status_quiet || exit 0

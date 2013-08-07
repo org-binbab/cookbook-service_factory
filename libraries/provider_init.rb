@@ -37,62 +37,77 @@ class Chef
     class ServiceFactoryProvider
       class Init < Generic
 
+        include RunActionNow::Mixin
         include Chef::Provider::ServiceFactory::Mixin::Unix
 
         def install_service
-          unix_path_prep  # from mixin
+          unix_path_prep  # from unix mixin
 
           # Requirements.
-          unix_bin "chkconfig" do
-            if platform?("debian")
-              action :install
-              package "chkconfig"
+          run_action_now((
+            unix_bin "chkconfig" do
+              if platform?("debian")
+                action :install
+                package "chkconfig"
+              end
             end
-          end
+          ))
 
           # Create init.d script.
-          template "/etc/init.d/#{service_config.service_name}" do
-            action :create
-            cookbook "service_factory"
-            source "init.service.erb"
-            owner "root"
-            group "root"
-            mode 0755
-            variables(service_config.symbolize_keys)  # full service_config provided
-            notifies :run, "bash[chkconfig: /etc/init.d/#{service_config.service_name}]"
-          end
+          run_action_now((
+            template "/etc/init.d/#{service_config.service_name}" do
+              action :create
+              cookbook "service_factory"
+              source "init.service.erb"
+              owner "root"
+              group "root"
+              mode 0755
+              variables(service_config.symbolize_keys)  # full service_config provided
+            end
+          ))
 
           # Add service via chkconfig.
-          bash "chkconfig: /etc/init.d/#{service_config.service_name}" do
-            user "root"
-            group "root"
-            cwd "/tmp"
-            code <<-EOH
-/sbin/chkconfig --add #{service_config.service_name}
-            EOH
-            action :nothing
-          end
+          run_action_now((
+            bash "chkconfig: /etc/init.d/#{service_config.service_name}" do
+              user "root"
+              group "root"
+              cwd "/tmp"
+              code <<-EOH
+  /sbin/chkconfig --add #{service_config.service_name}
+              EOH
+              action :run
+            end
+           ))
         end  # /install_service
 
         def uninstall_service
           # Requirements.
-          unix_bin "chkconfig"
+          run_action_now((
+            unix_bin "chkconfig"
+           ))
 
-          # Remove service via chkconfig.
-          bash "chkconfig: /etc/init.d/#{service_config.service_name}" do
-            user "root"
-            group "root"
-            cwd "/tmp"
-            code <<-EOH
-/sbin/chkconfig --del #{service_config.service_name} || true
-            EOH
-            only_if { ::File.exists?("/etc/init.d/#{service_config.service_name}") }
+          if ::File.exists?("/etc/init.d/#{service_config.service_name}")
+            # Remove service via chkconfig.
+            run_action_now((
+              bash "chkconfig: /etc/init.d/#{service_config.service_name}" do
+                user "root"
+                group "root"
+                cwd "/tmp"
+                code <<-EOH
+  /sbin/chkconfig --del #{service_config.service_name} || true
+                EOH
+                action :run
+              end
+            ))
+
+            # Remove init.d script.
+            run_action_now((
+              file "/etc/init.d/#{service_config.service_name}" do
+                action :delete
+              end
+            ))
           end
 
-          # Remove init.d script.
-          file "/etc/init.d/#{service_config.service_name}" do
-            action :delete
-          end
         end  # /uninstall_service
 
       end

@@ -25,10 +25,12 @@
 # limitations under the License.
 #
 
+require 'chef/exceptions'
 require 'chef/provider'
 require 'chef/resource'
 
 class Chef
+
   class Provider
     class ServiceFactoryProvider
       class Generic < Chef::Provider
@@ -49,25 +51,25 @@ class Chef
         end
 
         def action_install
-          converge_by("install service #{@new_resource}") do
+          #converge_by("install service #{@new_resource}") do
             install_service
-            Chef::Log.info("#{@new_resource} installed")
-          end
+            ::Chef::Log.info("#{@new_resource} installed")
+          #end
         end
 
         def action_uninstall
-          converge_by("delete service #{@new_resource}") do
+          #converge_by("delete service #{@new_resource}") do
             uninstall_service
-            Chef::Log.info("#{@new_resource} uninstalled")
-          end
+            ::Chef::Log.info("#{@new_resource} uninstalled")
+          #end
         end
 
         def install_service
-          raise Chef::Exceptions::UnsupportedAction, "#{self.to_s} does not support :install"
+          raise ::Chef::Exceptions::UnsupportedAction, "#{self.to_s} does not support :install"
         end
 
         def uninstall_service
-          raise Chef::Exceptions::UnsupportedAction, "#{self.to_s} does not support :uninstall"
+          raise ::Chef::Exceptions::UnsupportedAction, "#{self.to_s} does not support :uninstall"
         end
 
         protected
@@ -80,10 +82,10 @@ class Chef
         def service_config
           if @service_config.nil?
             # Generate conf mash.
-            conf = @service.attribute_mash_formatted  # see "resource_masher" cookbook for details
+            conf = @service.attribute_mash_formatted(@service.path_variables)  # see "resource_masher" cookbook
             conf[:supports_reload] = @service.supports.has_key?(:reload) ? @service.supports[:reload] : false
-            Chef::Log.debug("service #{@new_resource} config:")
-            Chef::Log.debug(conf.to_yaml)
+            ::Chef::Log.debug("service_factory config for: #{@new_resource}")
+            ::Chef::Log.debug(conf.to_yaml)
             @service_config = conf
           end
 
@@ -92,15 +94,17 @@ class Chef
 
       end
     end
-  end
-end
+  end  # /Provider
 
-class Chef
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+  # NOTE: Resource must come after provider because of 'provider_base'.
+
   class Resource
     class ServiceFactoryProvider < Chef::Resource
 
       identity_attr :service_name
-      provider_base Chef::Provider::ServiceFactoryProvider
+      provider_base ::Chef::Provider::ServiceFactoryProvider
 
       def initialize(name, run_context=nil)
         super
@@ -123,10 +127,12 @@ class Chef
         set_or_return(
             :factory,
             arg,
-            :kind_of => [ Chef::Resource::ServiceFactory ]
+            :kind_of => [ ::Chef::Resource::ServiceFactory ]
         )
       end
 
     end
-  end
-end
+  end  # /Resource
+
+end  # /Chef
+

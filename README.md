@@ -7,9 +7,9 @@ http://community.opscode.com/cookbooks/service_factory
 **Fully functional … documentation WIP, and example usages coming soon !!**
 
 
-## Description
+# Description
 
-Generate services using native system features with the `service_factory` LWRPs.
+Generate services using native system features with the **service_factory** LWRPs.
 
 Your recipe provides the configuration details, and the necessary files are generated to create a **SysV** or **Upstart** service, depending on what each OS prefers. (**SystemD** coming soon!!)
 
@@ -24,26 +24,35 @@ The following are supported and verified through test-kitchen automated integrat
 - Centos
 - Ubuntu
 
+**Default Service Managers**
 
-## Requirements
+Unless otherwise specified in the **service_factory** global config, the default service manager is **SysV**, and
+others are selected conditionally based on the distribution and version.
 
-Cookbooks: unix_bin
+You can customize these defaults by adjusting the 'platform_map' node attribute, described below.
 
 
-## Resource Documentation
+# Requirements
 
-**ACTIONS**
+Cookbooks:: [unix_bin](http://community.opscode.com/cookbooks/service_factory) , [resource_masher](http://community.opscode.com/cookbooks/resource_masher) , [run_action_now](http://community.opscode.com/cookbooks/run_action_now)
+
+Resource attributes:: `service_desc` , `exec` , `run_user` , `run_group`
+
+
+# Resource Documentation
+
+**RESOURCE ACTIONS**
 
 ```
-:create, :delete, :start, :stop, :restart, :enable, :disable
+:create , :delete , :start , :stop , :restart , :enable , :disable
 ```
 
 **Note:** You can also use a standard Chef service resource to manage the service once created.
 
-**ATTRIBUTES**
+**RESOURCE ATTRIBUTES**
 
 ```
-attribute       = default
+:attribute       = default
     description (type)
 ```
 
@@ -52,6 +61,12 @@ attribute       = default
 
     :service_desc
         Short description of service. (Required)
+
+    :run_user
+        Name or id of user to run service under. (Required)
+
+    :run_group
+        Name or id of group to run service under. (Required)
 
     :exec
         Full path to executable binary. (Required)
@@ -106,29 +121,27 @@ attribute       = default
     :create_pid     = %{exec_forks}  ?  false  :  true
         If true the factory creates a pid file, otherwise the daemon should create it.
 
-    :run_user
-        Name or id of user to run service under. (Required)
-
-    :run_group
-        Name or id of group to run service under. (Required)
+    :path_variables = Hash.new
+        Additional variables injectable into path strings.
 
 
-## Recipes
+# Recipes
 
 This cookbook only provides LWRPs, no recipes are included.
 
 
-## Attributes
+# Attributes
 
-The following attributes / defaults govern the platform selection.
+The following default node attributes govern the platform selection.
+You may customize the operation by appending/overwriting these in your node configuration.
 
 ```
-default["service_factory"]["platform_map"]["centos"]["default"] = "init"
+default["service_factory"]["platform_map"]["default"] = "init"
 default["service_factory"]["platform_map"]["ubuntu"]["default"] = "upstart"
 ```
 
 
-## Test-Kitchen
+# Test-Kitchen
 
 This package is **test-kitchen** enabled and automatically tested against:
 
@@ -149,8 +162,10 @@ A successful test appears as follows:
        Finished verifying <default-ubuntu-1004> (1m18.10s).
 ```
 
+Tested system service provided by [Unix Mock Service Daemon](https://github.com/org-binbab/unix_service_mock_daemon)
 
-## Development and Maintenance
+
+# Development and Maintenance
 
 * Found a bug?
 * Need some help?
@@ -160,7 +175,7 @@ A successful test appears as follows:
 Please visit: [code.binbab.org](http://code.binbab.org)
 
 
-## Authors and License
+# Authors and License
 
   * Author:: BinaryBabel OSS (<projects@binarybabel.org>)
   * Copyright:: 2013 `sha1(OWNER) = df334a7237f10846a0ca302bd323e35ee1463931`
