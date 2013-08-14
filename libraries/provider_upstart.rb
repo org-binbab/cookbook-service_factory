@@ -60,6 +60,22 @@ class Chef
               variables(service_config.symbolize_keys)  # full service_config provided
             end
           ))
+
+          # Create compliant init.d script.
+          run_action_now((
+            template "/etc/init.d/#{service_config.service_name}" do
+              action :create
+              cookbook "service_factory"
+              source "upstart.initd.erb"
+              owner "root"
+              group "root"
+              mode 0755
+              variables(service_config.symbolize_keys)  # full service_config provided
+            end
+          ))
+
+          # Configure stock service to use upstart provider.
+          service_resource.provider(::Chef::Provider::Service::Upstart)
         end  # /install_service
 
         def uninstall_service

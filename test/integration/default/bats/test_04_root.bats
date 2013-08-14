@@ -6,8 +6,8 @@ load common
 ## NOBODY USER SERVICE TEST ##
 ################################################################################
 
-@test "nobody service" {
-  SERVICE="fts_nobody"
+@test "root service" {
+  SERVICE="fts_root"
 
   note "Should not be running."
     run svc_status $SERVICE
@@ -27,9 +27,9 @@ load common
     bs="$(bin_status)"
     [[ "$bs" =~ "$BIN_TEST_STRING" ]]
 
-  note "Verify running as nobody user."
+  note "Verify running as root user."
     bs_user="$(bin_user $bs)"
-    [ "$bs_user" = "nobody" ]
+    [ "$bs_user" = "root" ]
 
   note "Obtain timestamp."
     TIMESTAMP=$(bin_timestamp $bs)

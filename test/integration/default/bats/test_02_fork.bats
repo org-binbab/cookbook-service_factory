@@ -30,6 +30,10 @@ load common
     bs="$(bin_status)"
     [[ "$bs" =~ "$BIN_TEST_STRING" ]]
 
+  note "Verify running as correct user."
+    bs_user="$(bin_user $bs)"
+    [ "$bs_user" = "$BIN_TEST_USER" ]
+
   note "Ensure non-empty parent pid (we forked)."
     bs_ppid="$(bin_ppid $bs)"
     [ "$bs_ppid" -gt 0 ]
@@ -70,6 +74,9 @@ load common
     run bin_status_raw
     [ "$output" = "" ]
     [ "$status" -eq 1 ]
+
+  note "PID file should no longer exist."
+    [ ! -e "$PID_FILE" ]
 
   note "Ensure all hooks executed."
     [ "$(cat $A1B_FILE)" = "A1B2C3D4" ]

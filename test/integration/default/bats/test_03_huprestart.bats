@@ -67,6 +67,9 @@ load common
     [ "$output" = "" ]
     [ "$status" -eq 1 ]
 
+  note "PID file should no longer exist."
+    [ ! -e "$PID_FILE" ]
+
   note  # all done
 }
 
@@ -95,6 +98,10 @@ load common
     bs="$(bin_status)"
     [[ "$bs" =~ "$BIN_TEST_STRING" ]]
 
+  note "Verify running as correct user."
+    bs_user="$(bin_user $bs)"
+    [ "$bs_user" = "$BIN_TEST_USER" ]
+
   note "Ensure non-empty parent pid (we forked)."
     bs_ppid="$(bin_ppid $bs)"
     [ "$bs_ppid" -gt 0 ]
@@ -122,6 +129,9 @@ load common
   note "Reload should show empty SIGHUP counter."
     [ "$(bin_loadcount $bs)" -eq 0 ]
 
+  note "Reload should show same user."
+    [ "$(bin_user $bs)" = "$bs_user" ]
+
   note "Stop and check status."
     svc_stop $SERVICE
     run svc_status $SERVICE
@@ -131,6 +141,9 @@ load common
     run bin_status_raw
     [ "$output" = "" ]
     [ "$status" -eq 1 ]
+
+  note "PID file should no longer exist."
+    [ ! -e "$PID_FILE" ]
 
   note  # all done
 }

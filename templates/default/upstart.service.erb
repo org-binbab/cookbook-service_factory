@@ -80,14 +80,15 @@ pre-stop script
 end script
 
 <% end -%>
-<% if @after_stop != "" -%>
 post-stop script
+<% if @after_stop != "" -%>
   ##### AFTER STOP ##########################################################
   <%= @after_stop %>
   ###########################################################################
-end script
 
 <% end -%>
+  [ -e "$PID_FILE" ] && rm "$PID_FILE"
+end script
 
 <% else #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~# -%>
 # NOTE:
@@ -97,7 +98,8 @@ end script
 #   For more information: https://bugs.launchpad.net/upstart/+bug/406397
 #
 #   In order to provide consistent and relaible behavior, the following pre/post
-#   scripts handle appropriate tracking of the daemon process.
+#   scripts handle appropriate tracking of the daemon process, in addition to
+#   any user-defined pre/post commands.
 
 pre-start script
   <% if @before_start != "" -%>
@@ -106,6 +108,24 @@ pre-start script
   ###########################################################################
 
   <% end -%>
+  # Ensure directory parent to PID is writable by RUN_USER
+  pid_dir="$(dirname $PID_FILE)"
+  su -l -s /bin/bash -c "test -w $pid_dir" $RUN_USER
+  if [ $? -ne 0 ] ; then
+    echo "ERROR: PID directory not writable by user. ($pid_dir) ($RUN_USER)" 1>&2
+    exit 1
+  fi
+
+  # If the PID file exists, we must make sure it is wr
+  if [ -e "$PID_FILE" ] ; then
+    su -l -s /bin/bash -c "test -w $PID_FILE" $RUN_USER
+    if [ $? -ne 0 ] ; then
+      echo "ERROR: PID file not writable by user. ($PID_FILE) ($RUN_USER)" 1>&2
+      exit 1
+    fi
+  fi
+
+  # Run the service
   su -l -s /bin/bash -c 'exec "$0" "$@"' $RUN_USER -- $EXECUTE <%= Array(@exec_args).join(' ') %> &> /dev/null
 end script
 
@@ -158,11 +178,14 @@ post-stop script
   else
     killall -u $RUN_USER $PROCESS
   fi
+
   <% if @after_stop != "" -%>
   ##### AFTER STOP ##########################################################
   <%= @after_stop %>
   ###########################################################################
+
   <% end -%>
+  [ -e "$PID_FILE" ] && rm "$PID_FILE"
 end script
 
 <% end -%>

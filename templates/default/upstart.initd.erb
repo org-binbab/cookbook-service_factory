@@ -1,0 +1,45 @@
+#!/bin/bash
+#
+# <%= @service_name %>
+#
+# chkconfig: - 98 02
+# description: <%= @service_desc %>
+
+### BEGIN INIT INFO
+# Provides: <%= @service_name %>
+# Required-Start: $local_fs $network $remote_fs
+# Required-Stop: $local_fs $network $remote_fs
+# Should-Start: $named $time
+# Should-Stop: $named $time
+# Short-Description: Startup script for <%= @service_name %>
+# Description: <%= @service_desc %>
+### END INIT INFO
+
+################################################################################
+##                                                                            ##
+##                     THIS SERVICE IS MANAGED BY UPSTART                     ##
+##                                                                            ##
+################################################################################
+
+#
+# Please use the appropriate Upstart commands to manage this service.
+#
+# Per Debian policy 9.11.1 this init.d script exists for compliancy but will
+# exit with an error code if invoked with any command other than 'stop'.
+#
+# http://www.debian.org/doc/debian-policy/ch-opersys.html
+#
+# Packaged compliancy scripts may attempt to start the service if Upstart is
+# missing, however this service was dynamically generated with the knowledge
+# that Upstart is available on this system, and therefore this script safely
+# avoids the need to provide such functions.
+#
+
+case "$1" in
+  stop)
+    exit 0
+    ;;
+  *)
+    exit 1
+    ;;
+esac

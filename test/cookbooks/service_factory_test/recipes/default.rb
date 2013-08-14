@@ -7,17 +7,31 @@ unix_binaries do
   install %w{ nc wc egrep }
 end
 
+fts_username = "fts_user"
 fts_basepath = "/opt/factory_test_service"
 fts_script   = "#{fts_basepath}/fts.sh"
+fts_script2  = "#{fts_basepath}/fts-autostart.sh"
 
 directory fts_basepath do
   action :create
-  owner "root"
+  owner fts_username
   group "root"
   mode 0777
 end
 
+user fts_username do
+  action :create
+  home fts_basepath
+end
+
 cookbook_file fts_script do
+  source "factory_test_service.sh"
+  owner "root"
+  group "root"
+  mode 0755
+end
+
+cookbook_file fts_script2 do
   source "factory_test_service.sh"
   owner "root"
   group "root"
@@ -48,7 +62,7 @@ service_factory "fts_nofork" do
   exec fts_script
   pid_file "#{fts_script}.pid"
   log_what :std_all
-  run_user "root"
+  run_user fts_username
   run_group "root"
   supports :reload => true
   before_start "echo -n A1 >> #{fts_script}.a1b"
@@ -69,7 +83,7 @@ service_factory "fts_fork" do
   exec_args [ "--fork" ]
   exec_forks true
   pid_file "#{fts_script}.pid"
-  run_user "root"
+  run_user fts_username
   run_group "root"
   supports :reload => true
   before_start "echo -n A1 >> #{fts_script}.a1b"
@@ -87,7 +101,7 @@ service_factory "fts_huprestart" do
   exec_args [ "--no-reload" ]
   pid_file "#{fts_script}.pid"
   log_what :std_all
-  run_user "root"
+  run_user fts_username
   run_group "root"
 end
 
@@ -100,19 +114,19 @@ service_factory "fts_huprestart_fork" do
   exec_args [ "--fork", "--no-reload" ]
   exec_forks true
   pid_file "#{fts_script}.pid"
-  run_user "root"
+  run_user fts_username
   run_group "root"
 end
 
 # Related tests:
-#   Running under non-root user.
-service_factory "fts_nobody" do
+#   Running under root user.
+service_factory "fts_root" do
   action [ :create, :disable ]
-  service_desc "Test Service (nobody user)"
+  service_desc "Test Service (root user)"
   exec fts_script
-  pid_file "#{fts_script}.pid.nobody"
-  run_user "nobody"
-  run_group "root"  # nobody group is not consistent across systems
+  pid_file "#{fts_script}.pid"
+  run_user "root"
+  run_group "root"  # nobody group doesn't exist on all systems
 end
 
 # Related tests:
@@ -122,6 +136,52 @@ service_factory "fts_delete" do
   service_desc "Test Service (delete)"
   exec fts_script
   pid_file "#{fts_script}.pid"
+  run_user fts_username
+  run_group "root"
+end
+
+# Related tests:
+#   Service enabled
+#   Service started
+service_factory "fts_default_auto" do
+  action [ :create, :enable, :start ]
+  service_desc "Test Service (autostart)"
+  exec fts_script2  # use alternate script name (prevents kill)
+  exec_args "--port 1235"
+  pid_file "#{fts_script}.pid.default"
+  log_what :std_all
   run_user "root"
   run_group "root"
+end
+
+# Related tests:
+#   Notify via service_factory
+service_factory "fts_notify1_auto" do
+  action [ :create, :disable ]
+  service_desc "Test Service (notify start)"
+  exec fts_script2  # use alternate script name (prevents kill)
+  exec_args "--port 1236"
+  pid_file "#{fts_script}.pid.notify1"
+  log_what :std_all
+  run_user "root"
+  run_group "root"
+end
+
+# Related tests:
+#   Notify via service
+service_factory "fts_notify2_auto" do
+  action [ :create, :disable ]
+  service_desc "Test Service (notify start)"
+  exec fts_script2  # use alternate script name (prevents kill)
+  exec_args "--port 1237"
+  pid_file "#{fts_script}.pid.notify2"
+  log_what :std_all
+  run_user "root"
+  run_group "root"
+end
+
+bash "test_notify" do
+  code 'echo "Test notifications..."'
+  notifies :start, "service_factory[fts_notify1_auto]", :immediately
+  notifies :start, "service[fts_notify2_auto]", :immediately
 end

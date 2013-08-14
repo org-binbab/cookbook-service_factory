@@ -4,6 +4,7 @@
 ################################################################################
 
 PORT=1234
+BIN_TEST_USER="fts_user"
 BIN_TEST_STRING="Soundslikefunonabun"
 PID_FILE="/opt/factory_test_service/fts.sh.pid"
 MGR_FILE="/opt/factory_test_service/fts.manager"
@@ -14,45 +15,65 @@ A1B_FILE="/opt/factory_test_service/fts.sh.a1b"
 ################################################################################
 
 function bin_status_raw() {
-  nc localhost $PORT
+  nc localhost ${1:-$PORT}
 }
 
 function bin_status() {
-  if [ -n "$1" ] ; then
-    echo $1
+  prt=$PORT
+  raw=""
+
+  while [ $# -gt 0 ] ; do
+    case $1 in
+      -r)
+        shift
+        raw="$1"
+        ;;
+      -p)
+        shift
+        [ "$1" -gt 0 ] && PORT=$1
+        ;;
+      *)
+        echo "ERROR: Invalid option passed to bin_status. ($1)" 1>&2
+        exit 1
+        ;;
+    esac
+    shift
+  done
+
+  if [ -n "$raw" ] ; then
+    echo $raw
   else
-    bin_out=""
     for i in 1 2 3 ; do
-      bin_out="$(bin_status_raw)" || true
-      [ -n "$bin_out" ] && break || true
+      raw="$(bin_status_raw)" || true
+      [ -n "$raw" ] && break || true
       sleep 2
     done
 
-    echo "DEBUG: $bin_out" 1>&2
+    echo "DEBUG: $raw" 1>&2
 
-    [ -z "$bin_out" ] || echo -n "$bin_out"
-    [ -n "$bin_out" ]
+    [ -z "$raw" ] || echo -n "$raw"
+    [ -n "$raw" ]
   fi
 }
 
 function bin_timestamp() {
-  bin_status $1 | cut -d' ' -f2
+  bin_status -r "$1" | cut -d' ' -f2
 }
 
 function bin_ppid() {
-  bin_status $1 | cut -d' ' -f3
+  bin_status -r "$1" | cut -d' ' -f3
 }
 
 function bin_pid() {
-  bin_status $1 | cut -d' ' -f4
+  bin_status -r "$1" | cut -d' ' -f4
 }
 
 function bin_user() {
-  bin_status $1 | cut -d' ' -f5
+  bin_status -r "$1" | cut -d' ' -f5
 }
 
 function bin_loadcount() {
-  bin_status $1 | cut -d' ' -f6
+  bin_status -r "$1" | cut -d' ' -f6
 }
 
 
@@ -81,10 +102,10 @@ function svc_reload() {
 }
 
 function svc_list() {
-  oscmd_list | egrep ^fts_
+  oscmd_list | egrep ^fts_ | egrep -v _auto
 }
 
-#TODO Not TAP compliant, but provides much needed debug info.
+# Notes are not TAP compliant, but provides much needed debug info.
 LAST_NOTE=""
 function note() {
   [ -n "$LAST_NOTE" ] && echo "[+] PASS" && echo
@@ -93,10 +114,11 @@ function note() {
 }
 
 function setup() {
-  # Stop all fts_* sevices.
+  # Stop all fts_* sevices (excluding auto-started)
   while read -r service ; do
     [[ "$(oscmd_status $service)" =~ "$status_stopped" ]] || oscmd_stop $service 2> /dev/null || true
   done <<< "$(svc_list)"
+  rm "$PID_FILE" &> /dev/null || true
 }
 
 function teardown() {
@@ -104,9 +126,9 @@ function teardown() {
   echo "Leftover processes:"
   echo "--------------------------------------------------------"
   if ps h o user,pid,command -C fts.sh ; then
-    killall fts.sh &> /dev/null || true
+    killall -g fts.sh &> /dev/null || true
     sleep 2
-    killall nc &> /dev/null || true
+    #killall nc &> /dev/null || true
   else
     echo "NONE"
   fi

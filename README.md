@@ -39,22 +39,73 @@ Cookbooks:: [unix_bin](http://community.opscode.com/cookbooks/service_factory) ,
 Resource attributes:: `service_desc` , `exec` , `run_user` , `run_group`
 
 
+# Simple Examples (More coming soon..)
+
+*There is a full attribute listing towards end of README.*
+
+** Basic service (required elements) **
+
+    service_factory "my_service" do
+      service_desc "My Service"
+      exec "/opt/myapp/bin/run.sh"
+      run_user "nobody"
+      run_group "nobody"
+      action :create                  # can also :enable and :start here, use array
+    end
+    
+** Service with arguments **
+
+    service_factory "my_service" do
+      service_desc "My Service"
+      exec "/opt/myapp/bin/run.sh"
+      exec_args "--port 1234"         # can also be an array of strings
+      run_user "nobody"
+      run_group "nobody"
+      action :create
+    end
+    
+** Forked service **
+
+It's really import to set the proper flag if the service forks.
+(Meaning that the script you're calling returns immediately and the service runs in the background.)
+
+    service_factory "my_service" do
+      service_desc "My Service"
+      exec "/opt/myapp/bin/run.sh"
+      exec_forks true
+      pid_file "/opt/myapp/var/run/myapp.pid"
+      run_user "nobody"
+      run_group "nobody"
+      action :create
+    end
+    
+** Notifications **
+
+The service_factory resource can receive all standard service signals. It also creates a stock service resource you can notify as well.
+
+    some_resource "abc" do
+      notifies :start, "service_factory[my_service]"
+    end
+    
+    some_resource "abc" do
+      notifies :start, "service[my_service]"
+    end
+
+
 # Resource Documentation
 
 **RESOURCE ACTIONS**
 
-```
-:create , :delete , :start , :stop , :restart , :enable , :disable
-```
+    :create , :delete , :start , :stop , :restart , :enable , :disable
 
 **Note:** You can also use a standard Chef service resource to manage the service once created.
 
 **RESOURCE ATTRIBUTES**
 
-```
-:attribute       = default
-    description (type)
-```
+    --------------------------------------------------------------------------------------
+    :attribute       = default
+        description (type)
+    --------------------------------------------------------------------------------------
 
     :service_name
         Simple name of service. Defaults to resource name. (/^[a-z0-9_]+$/i)
@@ -135,10 +186,8 @@ This cookbook only provides LWRPs, no recipes are included.
 The following default node attributes govern the platform selection.
 You may customize the operation by appending/overwriting these in your node configuration.
 
-```
-default["service_factory"]["platform_map"]["default"] = "init"
-default["service_factory"]["platform_map"]["ubuntu"]["default"] = "upstart"
-```
+- `default["service_factory"]["platform_map"]["default"] = "init"`
+- `default["service_factory"]["platform_map"]["ubuntu"]["default"] = "upstart"`
 
 
 # Test-Kitchen
@@ -150,17 +199,15 @@ This package is **test-kitchen** enabled and automatically tested against:
 
 A successful test appears as follows:
 
-```
------> Running bats test suite
-       1..6
-       ok 1 non-forked service
-       ok 2 forked service
-       ok 3 sighup restart (non-forked)
-       ok 4 sighup restart (forked)
-       ok 5 nobody service
-       ok 6 deleted service
-       Finished verifying <default-ubuntu-1004> (1m18.10s).
-```
+    -----> Running bats test suite
+           1..6
+           ok 1 non-forked service
+           ok 2 forked service
+           ok 3 sighup restart (non-forked)
+           ok 4 sighup restart (forked)
+           ok 5 nobody service
+           ok 6 deleted service
+           Finished verifying <default-ubuntu-1004> (1m18.10s).
 
 Tested system service provided by [Unix Mock Service Daemon](https://github.com/org-binbab/unix_service_mock_daemon)
 

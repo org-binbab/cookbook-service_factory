@@ -25,6 +25,17 @@
 # limitations under the License.
 #
 
+def initialize(name, run_context=nil)
+  super
+
+  # Define stock service resource so that notifications can be sent to it directly.
+  begin
+    run_context.resource_collection.find(:service => name)
+  rescue ::Chef::Exceptions::ResourceNotFound
+    run_context.resource_collection.insert(::Chef::Resource::Service.new(name, run_context))
+  end
+end
+
 actions :create, :delete, :start, :stop, :restart, :enable, :disable
 default_action :create
 

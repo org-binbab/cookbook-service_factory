@@ -74,11 +74,6 @@ class Chef
 
         protected
 
-        def service
-          service_config
-          @service
-        end
-
         def service_config
           if @service_config.nil?
             # Generate conf mash.
@@ -90,6 +85,11 @@ class Chef
           end
 
           @service_config
+        end
+
+        def service_resource
+          svc_name = service_config.service_name
+          run_context.resource_collection.find(:service => svc_name)
         end
 
       end

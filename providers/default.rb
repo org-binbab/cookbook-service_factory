@@ -25,6 +25,8 @@
 # limitations under the License.
 #
 
+include RunActionNow::Mixin
+
 action :create do
 
   # Select provider.
@@ -36,12 +38,13 @@ action :create do
   end
 
   # Pass control to new provider.
-  sub_provider = service_factory_provider new_resource.name do
-    action :nothing
-    factory new_resource
-    provider sub_provider_name
-  end
-  sub_provider.run_action(:install)
+  run_action_now((
+    service_factory_provider new_resource.name do
+      action :install
+      factory new_resource
+      provider sub_provider_name
+    end
+  ))
 
 end
 
@@ -56,34 +59,22 @@ action :delete do
   end
 
   # Pass control to new provider.
-  sub_provider = service_factory_provider new_resource.name do
-    action :nothing
-    factory new_resource
-    provider sub_provider_name
-  end
-  sub_provider.run_action(:uninstall)
+  run_action_now((
+    service_factory_provider new_resource.name do
+      action :uninstall
+      factory new_resource
+      provider sub_provider_name
+    end
+  ))
 
 end
 
 [ :start, :stop, :restart, :enable, :disable ].each do |svc_action|
 
   action svc_action do
-    # Select provider.
-    sub_provider_name = node[:service_factory][:provider]
-    unless sub_provider_name
-      #TODO This can be moved to the attributes file in Chef-11 forward.
-      sub_provider_name = value_for_platform(node[:service_factory][:platform_map].to_hash)
-      node.default["service_factory"]["provider"] = sub_provider_name
-    end
-
-    # Pass to matching default Chef provider.
-    service new_resource.name do
-      action svc_action
-      # Specify provider since the factory may have installed using a manager different
-      # from the OS default provider chef would select.
-      # Ex. Chef does not consider upstart the default manager for Ubuntu.
-      provider Chef::Provider::Service.const_get(sub_provider_name.capitalize)
-    end
+    svc_name = new_resource.name
+    svc = run_context.resource_collection.find(:service => svc_name)
+    svc.run_action(svc_action)
   end
 
 end
