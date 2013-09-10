@@ -18,6 +18,15 @@
 # Source function library
 . /etc/init.d/functions
 
+<% if @env_variables.length -%>
+# Service-specific variables
+<% @env_variables.each do |key,val| -%>
+export <%= key %>="<%= val %>"
+<% end -%>
+
+<% end -%>
+# Service execution details
+
 EXECUTE="<%= @exec %>"
 PROCESS="<%= @process_name || ::File::basename(@exec) %>"
 PROGRAM="<%= @service_name %>"

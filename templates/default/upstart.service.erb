@@ -18,6 +18,13 @@ respawn limit 1 30
 
 console none
 umask <%= @exec_umask %>
+<% if @env_variables.length -%>
+
+# Service-specific variables
+<% @env_variables.each do |key,val| -%>
+env <%= key %>="<%= val %>"
+<% end -%>
+<% end -%>
 
 <% unless @exec_forks -%>
 <%
@@ -126,7 +133,7 @@ pre-start script
   fi
 
   # Run the service
-  su -l -s /bin/bash -c 'exec "$0" "$@"' $RUN_USER -- $EXECUTE <%= Array(@exec_args).join(' ') %> &> /dev/null
+  su -l -p -s /bin/bash -c 'exec "$0" "$@"' $RUN_USER -- $EXECUTE <%= Array(@exec_args).join(' ') %> &> /dev/null
 end script
 
 <% if @after_start != "" -%>

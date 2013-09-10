@@ -53,12 +53,15 @@ Resource attributes:: `service_desc` , `exec` , `run_user` , `run_group`
       action :create                  # can also :enable and :start here, use array
     end
     
-** Service with arguments **
+** Service with arguments or environment variables **
 
     service_factory "my_service" do
       service_desc "My Service"
       exec "/opt/myapp/bin/run.sh"
       exec_args "--port 1234"         # can also be an array of strings
+      env_variables({                 # variables must be in a hash
+        :SERVICE_VARIABLE => "value"
+      })
       run_user "nobody"
       run_group "nobody"
       action :create
@@ -171,6 +174,9 @@ The service_factory resource can receive all standard service signals. It also c
 
     :create_pid     = %{exec_forks}  ?  false  :  true
         If true the factory creates a pid file, otherwise the daemon should create it.
+
+    :env_variables  = Hash.new
+        Shell environment variables to be exported into service
 
     :path_variables = Hash.new
         Additional variables injectable into path strings.

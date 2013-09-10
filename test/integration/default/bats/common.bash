@@ -57,25 +57,24 @@ function bin_status() {
 }
 
 function bin_timestamp() {
-  bin_status -r "$1" | cut -d' ' -f2
+  bin_status -r "$1" | head -n1 | cut -d' ' -f2
 }
 
 function bin_ppid() {
-  bin_status -r "$1" | cut -d' ' -f3
+  bin_status -r "$1" | head -n1 | cut -d' ' -f3
 }
 
 function bin_pid() {
-  bin_status -r "$1" | cut -d' ' -f4
+  bin_status -r "$1" | head -n1 | cut -d' ' -f4
 }
 
 function bin_user() {
-  bin_status -r "$1" | cut -d' ' -f5
+  bin_status -r "$1" | head -n1 | cut -d' ' -f5
 }
 
 function bin_loadcount() {
-  bin_status -r "$1" | cut -d' ' -f6
+  bin_status -r "$1" | head -n1 | cut -d' ' -f6
 }
-
 
 function svc_status() {
   oscmd_status $1

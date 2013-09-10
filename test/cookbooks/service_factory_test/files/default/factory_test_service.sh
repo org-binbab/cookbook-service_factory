@@ -17,8 +17,8 @@
 #   permissions and limitations under the License.
 #  ----------------------------------------------------------------------
 
-VERSION="0.1.1"
-RELEASE="2013-08-06"
+VERSION="0.1.2"
+RELEASE="2013-09-09"
 
 #  The latest version of this script, along with any documentation,
 #  source code, and bug/feature management is available at:
@@ -51,6 +51,7 @@ PARENT_PID="-1"
 SUB_PID="-1"
 FORK=0
 RELOAD=1
+ENV=0
 
 function usage {
   echo
@@ -67,6 +68,7 @@ function usage {
   echo "  $TEST_STRING $START_TIME $PARENT_PID $START_PID $START_USER $RELOAD_COUNTER"
   echo
   echo "Available options:"
+  echo "  --env               Print environment variables/values after status line"
   echo "  --fork              Fork and return immediately"
   echo "  --no-reload         Exit on reload (SIGHUP)"
   echo "  --port PORT         Listen on alternate port"
@@ -97,6 +99,9 @@ trap cleanup SIGINT SIGTERM
 
 while [ $# -gt 0 ] ; do
   case $1 in
+    --env)
+      ENV=1
+      ;;
     --fork)
       FORK=1
       ;;
@@ -121,7 +126,9 @@ done
 if [ $FORK -eq 1 ] ; then
   RELOAD_ARG=""
   [ $RELOAD -ne 1 ] && RELOAD_ARG="--no-reload"
-  $0 --ppid $START_PID --port $PORT $RELOAD_ARG &
+  ENV_ARG=""
+  [ $ENV -eq 1 ] && ENV_ARG="--env"
+  $0 --ppid $START_PID --port $PORT $RELOAD_ARG $ENV_ARG &
   PID=$!
   PID_FILE="$0.pid"
   echo $PID > $PID_FILE
@@ -129,8 +136,13 @@ if [ $FORK -eq 1 ] ; then
 else
   echo "Started at $START_TIME by $START_USER with pid $START_PID using port $PORT"
 
+  ENV_OUTPUT=""
+  if [ $ENV -eq 1 ] ; then
+    ENV_OUTPUT="\n$(/usr/bin/env 2>&1)"
+  fi
+
   while true ; do
-    echo "$TEST_STRING $START_TIME $PARENT_PID $START_PID $START_USER $RELOAD_COUNTER" | nc -lv $PORT &
+    printf "$TEST_STRING $START_TIME $PARENT_PID $START_PID $START_USER $RELOAD_COUNTER $ENV_OUTPUT\n" | nc -lv $PORT &
     SUB_PID=$!
     wait
     EXIT_CODE=$?

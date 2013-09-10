@@ -1,3 +1,7 @@
+## Version 0.1.4
+
+* Added support/testing for setting service environment variables, closes #3 (thanks @klamontagne)
+
 ## Version 0.1.3
 
 * Fixed stock service resource initialization and proxying, fixes #2  (thanks @srenatus)

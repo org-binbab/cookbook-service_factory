@@ -65,6 +65,9 @@ load common
   note "Reload should show in SIGHUP counter."
     [ "$(bin_loadcount $bs)" -eq 1 ]
 
+  note "Environment should include test variable."
+    printf "$bs" | grep "TEST_VAR=1234 5678"
+
   note "Stop and check status."
     svc_stop $SERVICE
     run svc_status $SERVICE

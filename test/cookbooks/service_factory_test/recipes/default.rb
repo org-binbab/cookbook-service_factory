@@ -56,10 +56,12 @@ end
 #   Ensure PID file created.
 #   Ensure hook execution.
 #   Reload by proper handling of SIGHUP.
+#   Ensure environment variables.
 service_factory "fts_nofork" do
   action [ :create, :disable ]
   service_desc "Test Service"
   exec fts_script
+  exec_args [ "--env" ]
   pid_file "#{fts_script}.pid"
   log_what :std_all
   run_user fts_username
@@ -69,6 +71,7 @@ service_factory "fts_nofork" do
   after_start  "echo -n B2 >> #{fts_script}.a1b"
   before_stop  "echo -n C3 >> #{fts_script}.a1b"
   after_stop   "echo -n D4 >> #{fts_script}.a1b"
+  env_variables :TEST_VAR => "1234 5678"
 end
 
 # Related tests:
@@ -76,11 +79,12 @@ end
 #   Passing of command line args.
 #   Ensure hook execution.
 #   Reload by proper handling of SIGHUP.
+#   Ensure environment variables.
 service_factory "fts_fork" do
   action [ :create, :disable ]
   service_desc "Test Service (fork)"
   exec fts_script
-  exec_args [ "--fork" ]
+  exec_args [ "--fork", "--env" ]
   exec_forks true
   pid_file "#{fts_script}.pid"
   run_user fts_username
@@ -90,6 +94,7 @@ service_factory "fts_fork" do
   after_start  "echo -n B2 >> #{fts_script}.a1b"
   before_stop  "echo -n C3 >> #{fts_script}.a1b"
   after_stop   "echo -n D4 >> #{fts_script}.a1b"
+  env_variables :TEST_VAR => "1234 5678"
 end
 
 # Related tests:

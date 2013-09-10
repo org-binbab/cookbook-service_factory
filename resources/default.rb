@@ -68,4 +68,5 @@ attribute :create_pid, :kind_of => [ TrueClass, FalseClass ], :default => nil
 attribute :run_user, :kind_of => String, :required => true
 attribute :run_group, :kind_of => String, :required => true
 
+attribute :env_variables, :kind_of => Hash, :default => Hash.new
 attribute :path_variables, :kind_of => Hash, :default => Hash.new
