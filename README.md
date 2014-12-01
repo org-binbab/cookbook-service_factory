@@ -52,7 +52,7 @@ Resource attributes:: `service_desc` , `exec` , `run_user` , `run_group`
       run_group "nobody"
       action :create                  # can also :enable and :start here, use array
     end
-    
+
 ** Service with arguments or environment variables **
 
     service_factory "my_service" do
@@ -66,7 +66,7 @@ Resource attributes:: `service_desc` , `exec` , `run_user` , `run_group`
       run_group "nobody"
       action :create
     end
-    
+
 ** Forked service **
 
 It's really import to set the proper flag if the service forks.
@@ -81,7 +81,7 @@ It's really import to set the proper flag if the service forks.
       run_group "nobody"
       action :create
     end
-    
+
 ** Notifications **
 
 The service_factory resource can receive all standard service signals. It also creates a stock service resource you can notify as well.
@@ -89,7 +89,7 @@ The service_factory resource can receive all standard service signals. It also c
     some_resource "abc" do
       notifies :start, "service_factory[my_service]"
     end
-    
+
     some_resource "abc" do
       notifies :start, "service[my_service]"
     end
@@ -180,6 +180,12 @@ The service_factory resource can receive all standard service signals. It also c
 
     :path_variables = Hash.new
         Additional variables injectable into path strings.
+
+    :start_on = "start on runlevel [35]"
+        Override the default start on directive for upstart service.
+
+    :stop_on = "stop on starting rc RUNLEVEL=[016]"
+        Override the default stop on directive for upstart service.
 
 
 # Recipes

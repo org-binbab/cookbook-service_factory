@@ -8,8 +8,19 @@ env LCK_FILE=<%= @lock_file %>
 env LOG_FILE=<%= @log_file %>
 env RUN_USER=<%= @run_user %>
 
+# Service start dependencies/directives
+<% unless @start_on.nil? -%>
 start on runlevel [35]
+<% else -%>
+start on <%= @start_on %>
+<% end -%>
+
+# Service stop dependencies/directives
+<% unless @stop_on.nil? -%>
 stop on starting rc RUNLEVEL=[016]  # ensures long kill timeout's are enforced
+<% else -%>
+stop on <%= @stop_on %>
+<% end -%>
 kill timeout <%= @kill_timeout %>
 <% unless @supports_reload -%>
 respawn
