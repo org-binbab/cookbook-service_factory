@@ -1,3 +1,7 @@
+## Version 0.1.5
+
+* Added support for setting the `start on` and `stop on` directives.
+
 ## Version 0.1.4
 
 * Added support/testing for setting service environment variables, closes #3 (thanks @klamontagne)
