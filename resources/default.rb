@@ -71,5 +71,5 @@ attribute :run_group, :kind_of => String, :required => true
 attribute :env_variables, :kind_of => Hash, :default => Hash.new
 attribute :path_variables, :kind_of => Hash, :default => Hash.new
 
-atrribute :start_on, :kind_of => String, :default => 'runlevel [35]'
-atrribute :stop_on, :kind_of => String, :default => 'starting rc RUNLEVEL=[016]'
+attribute :start_on, :kind_of => String, :default => 'runlevel [35]'
+attribute :stop_on, :kind_of => String, :default => 'starting rc RUNLEVEL=[016]'
