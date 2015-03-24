@@ -33,7 +33,7 @@ class Chef
 
   class Provider
     class ServiceFactoryProvider
-      class Generic < Chef::Provider
+      class Generic < Chef::Provider::LWRPBase
 
         def initialize(new_resource, run_context)
           super
