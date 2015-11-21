@@ -31,7 +31,7 @@ require 'chef/resource'
 
 class Chef
   class Provider
-    class ServiceFactory
+    class ServiceFactoryProvider
       module Mixin
         module Unix
 

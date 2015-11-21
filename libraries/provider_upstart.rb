@@ -38,7 +38,7 @@ class Chef
       class Upstart < Generic
 
         include RunActionNow::Mixin
-        include Chef::Provider::ServiceFactory::Mixin::Unix
+        include Chef::Provider::ServiceFactoryProvider::Mixin::Unix
 
         def install_service
           unix_path_prep  # from unix mixin
